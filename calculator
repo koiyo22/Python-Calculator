@@ -1,0 +1,162 @@
+from tkinter import *
+from tkinter import messagebox, Button
+
+top=Tk()
+top.geometry("300x500")
+top.title("kaiyi's calculator")
+top.resizable(False,False)
+
+#button logics --------------
+inputs = [] #stores indiv clicked numbers
+recorded_input = [] #stores different sets of numbers
+symbols=[] #stores the seq of symbols clicked
+
+def button_clicked(number): #when indiv numbers are clicked
+    inputs.append(number)
+    if inputs:
+        current_display=display_var.get()+str(number)  #bug here: have to click clear everytime
+    else:
+        current_display=display_var.set(" ")
+        current_display=display_var.get()+str(number) 
+    display_var.set(current_display) 
+    print(inputs) #debug
+
+def symbols_clicked(s):
+    symbols.append(s)
+    print("recorded signs: ",symbols)
+    current_display=display_var.get()+" "+s+ " "
+    display_var.set(current_display)
+
+def maths(): #store indiv numbers in list -> single integer
+    # refreshes everytime any symbol is clicked
+    if inputs:
+        input1=0
+        for i in inputs:
+            input1=input1*10 + i
+        recorded_input.append(input1)
+        print("recorded input: ",recorded_input)
+        inputs.clear()
+        print(inputs) #debug
+
+def singleSymbol(n): #if there is only 1 symbol used
+    if recorded_input:
+        display_var.set(str(recorded_input[0])) #display final answer
+        top.update_idletasks()
+    recorded_input.clear()
+    symbols.clear()
+    print(f"Answer is: {n}") #debug
+
+def updateRecordedList(index,n):
+    recorded_input[index]=n
+    recorded_input.pop(index+1)
+    print("updated recorded_input: ",recorded_input)
+
+def operations(symbol):
+    if symbol in symbols:
+        index=symbols.index(symbol)
+        try:
+            if symbol=="/":
+                result= recorded_input[index] / recorded_input[index+1]
+            elif symbol=="*":
+                result= recorded_input[index] * recorded_input[index+1]
+            elif symbol=="+":
+                result= recorded_input[index] + recorded_input[index+1]
+            elif symbol=="-":
+                result= recorded_input[index] - recorded_input[index+1]
+
+            symbols.pop(index)
+            updateRecordedList(index,result)
+            if not symbols:
+                return singleSymbol(result)
+
+        except IndexError:
+            print("out of bound!", recorded_input)
+            messagebox.showerror("Error", "Invalid operation!").center()
+
+def calc_clicked():
+    print("------------- START CALC ---------------")
+    maths()
+    print("final symbols: ",symbols)
+    
+    #process in the order of div -> mul -> add -> minus
+    for p in ["/","*","+","-"]:
+        while p in symbols:
+            operations(p)
+    recorded_input.clear()
+    print("current recorded_input: ", recorded_input)
+    symbols.clear()
+
+    
+def clear_clicked():
+    inputs.clear()
+    recorded_input.clear()
+    symbols.clear()
+    display_var.set("") #reset display when cleared
+    return print("all lists cleared")
+
+def backspace_clicked():
+    try:
+        current_display=display_var.get()
+        if current_display:
+            display_var.set(current_display[:-1]) #remove the last charactter
+        if inputs:
+            inputs.pop(-1)   
+    except IndexError:
+        print("no input")
+        
+#label UI
+display_var=StringVar()
+display_var.set("")
+
+label=Label(top,
+            bg="lightgrey",
+            height=5,
+            width=15,
+            font=("Arial",20,"bold"),
+            anchor="e",
+            textvariable=display_var).place(x=20,y=20)
+
+#numbers buttons UI
+buttons=[1,2,3,4,5,6,7,8,9,0]
+gap_x,gap_y=30,200
+
+button_objects={} #store the buttons
+button_size=60
+
+for i,num in enumerate (buttons):
+    row=i//3
+    col=i%3
+    x_pos=gap_x+col*(button_size+5)
+    y_pos=gap_y+row*(button_size+5)
+    if num == 0:  #special placement for zeroo
+        x_pos = gap_x + button_size + 5 
+        y_pos = gap_y + 3 * (button_size + 5) 
+    button_objects[num]=Button(top, text=str(num),width=7,height=2,command=lambda n=num:button_clicked(n))
+    button_objects[num].place(x=x_pos,y=y_pos)
+
+#backspace button UI
+backspace = Button(top,text="Del",command=backspace_clicked,height=2,width=7)
+backspace.place(x=160,y=395)
+
+#clear button UI
+clear = Button(top,text="Clear",command=clear_clicked,height=2,width=7)
+clear.place(x=30,y=395)
+
+#calc button UI
+calc = Button(top,text="Calculate",command=lambda:[calc_clicked()],height=2,width=20)
+calc.place(x=50,y=450)
+
+#maths button UI
+plus = Button(top,text="+",command=lambda:[maths(),symbols_clicked("+")],height=2,width=3)
+plus.place(x=225,y=200)
+
+minus = Button(top,text="-",command=lambda:[maths(),symbols_clicked("-")],height=2,width=3)
+minus.place(x=225,y=265)
+
+multiply = Button(top,text="*",command=lambda:[maths(),symbols_clicked("*")],height=2,width=3)
+multiply.place(x=225,y=330)
+
+divide = Button(top,text="/",command=lambda:[maths(),symbols_clicked("/")],height=2,width=3)
+divide.place(x=225,y=395)
+
+top.mainloop()
